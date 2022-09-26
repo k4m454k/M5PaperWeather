@@ -111,6 +111,13 @@ String getDateString(time_t rawtime)
    return (String) buff;
 }
 
+String getDay(time_t rawtime)
+{
+    char buff[32];
+    sprintf(buff,"%02d", day(rawtime));
+    return (String) buff;
+  }
+
 /* Convert the time_t to the time part HH:MM:SS format */
 String getTimeString(time_t rawtime)
 {

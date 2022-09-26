@@ -47,13 +47,21 @@ public:
    float  hourlyMaxTemp[MAX_HOURLY];       //!< max temperature forecast
    String hourlyMain[MAX_HOURLY];          //!< description of the hourly forecast
    String hourlyIcon[MAX_HOURLY];          //!< openweathermap icon of the forecast weather
+   float currentTemperature;
+   float currentHumidity;
+   String currentIcon;
+   String currentMain;
 
    int    maxRain;                         //!< maximum rain in mm of the day forecast
+   int  forecastMaxTempFl;
+   int  forecastMinTempFl;
    float  forecastMaxTemp[MAX_FORECAST];   //!< max temperature
    float  forecastMinTemp[MAX_FORECAST];   //!< min temperature
    float  forecastRain[MAX_FORECAST];      //!< max rain in mm
    float  forecastHumidity[MAX_FORECAST];  //!< humidity of the dayly forecast
    float  forecastPressure[MAX_FORECAST];  //!< air pressure
+
+   time_t forecastDt[MAX_FORECAST];
 
 protected:
    /* Convert UTC time to local time */
@@ -110,7 +118,12 @@ protected:
       sunset            = LocalTime(root["current"]["sunset"].as<int>());
       winddir           = root["current"]["wind_deg"].as<float>();
       windspeed         = root["current"]["wind_speed"].as<float>();
-
+      
+      currentTemperature = root["current"]["temp"].as<float>();
+      currentHumidity   = root["current"]["humidity"].as<float>();
+      currentIcon       = root["current"]["weather"][0]["icon"].as<char *>();
+      currentMain = root["current"]["weather"][0]["main"].as<char *>();
+      
       JsonArray hourly_list = root["hourly"];
       hourlyTime[0]    = LocalTime(root["current"]["dt"].as<int>());
       hourlyMaxTemp[0] = root["current"]["temp"].as<float>();
@@ -133,12 +146,23 @@ protected:
             forecastRain[i]     = dayly_list[i]["rain"].as<float>();
             forecastHumidity[i] = dayly_list[i]["humidity"].as<float>();
             forecastPressure[i] = dayly_list[i]["pressure"].as<float>();
+            forecastDt[i] = LocalTime(dayly_list[i]["dt"].as<int>());
+            
+            
             if (forecastRain[i] > maxRain) {
                maxRain = forecastRain[i];
             }
+            if (forecastMaxTemp[i] > forecastMaxTempFl) {
+              forecastMaxTempFl = forecastMaxTemp[i];
+              }
+
+            if (forecastMinTemp[i] < forecastMinTempFl) {
+              forecastMinTempFl = forecastMinTemp[i];
+              }
          }
       }
-          
+      Serial.println("maxTemp: " + forecastMaxTempFl);
+      Serial.println("minTemp: " + forecastMinTempFl);
       return true;
    }
 
@@ -151,6 +175,8 @@ public:
       , winddir(0)
       , windspeed(0)
       , maxRain(MIN_RAIN)
+      , forecastMaxTempFl(100)
+      , forecastMinTempFl(-100)
    {
       Clear();
    }
@@ -165,6 +191,8 @@ public:
       winddir           = 0;
       windspeed         = 0;
       maxRain           = MIN_RAIN;
+      forecastMinTempFl = 100;
+      forecastMaxTempFl = -100;
       memset(hourlyMaxTemp,    0, sizeof(hourlyMaxTemp));
       memset(forecastMaxTemp,  0, sizeof(forecastMaxTemp));
       memset(forecastMinTemp,  0, sizeof(forecastMinTemp));

@@ -48,12 +48,13 @@ protected:
 
    void DrawSunInfo(int x, int y, int dx, int dy);
    void DrawMoonInfo(int x, int y, int dx, int dy);
+   void DrawCurrentWeather(int x, int y, int dx, int dy);
    void DrawWindInfo(int x, int y, int dx, int dy);
    void DrawM5PaperInfo(int x, int y, int dx, int dy);
 
    void DrawHourly(int x, int y, int dx, int dy, Weather &weather, int index);
    
-   void DrawGraph(int x, int y, int dx, int dy, String title, int xMin, int xMax, int yMin, int yMax, float values[]);
+   void DrawGraph(int x, int y, int dx, int dy, String title, int xMin, int xMax, int yMin, int yMax, float values[], time_t forecastDt[]);
 
 public:
    WeatherDisplay(MyData &md, int x = 960, int y = 540)
@@ -66,6 +67,9 @@ public:
    void Show();
 
    void ShowM5PaperInfo();
+   void ShowWiFiError();
+   void ShowWiFiConnecting();
+   void DrawHeadPublic();
 };
 
 /* Draw a circle with optional start and end point */
@@ -110,11 +114,26 @@ void WeatherDisplay::DrawHead()
 {
    canvas.drawString(VERSION, 20, 10);
    canvas.drawCentreString(CITY_NAME, maxX / 2, 10, 1);
-   canvas.drawString(WifiGetRssiAsQuality(myData.wifiRSSI) + "%", maxX - 200, 10);
+   canvas.drawString(WifiGetRssiAsQuality(myData.wifiRSSI) + "%", maxX - 210, 10);
    DrawRSSI(maxX - 155, 25);
    canvas.drawString(String(myData.batteryCapacity) + "%", maxX - 110, 10);
    DrawBattery(maxX - 65, 10);
 }
+
+void WeatherDisplay::DrawHeadPublic()
+{
+  canvas.setTextSize(2);
+   canvas.drawString(VERSION, 20, 10);
+   canvas.drawCentreString(CITY_NAME, maxX / 2, 10, 1);
+   canvas.drawString(WifiGetRssiAsQuality(myData.wifiRSSI) + "%", maxX - 210, 10);
+   DrawRSSI(maxX - 155, 25);
+   canvas.drawString(String(myData.batteryCapacity) + "%", maxX - 110, 10);
+   DrawBattery(maxX - 65, 10);
+   canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
+   canvas.deleteCanvas();
+   delay(1000);
+}
+
 
 /* Draw one icon from the binary data */
 void WeatherDisplay::DrawIcon(int x, int y, const uint16_t *icon, int dx /*= 64*/, int dy /*= 64*/, bool highContrast /*= false*/)
@@ -209,6 +228,50 @@ void WeatherDisplay::DrawMoonInfo(int x, int y, int dx, int dy)
    DrawMoon(x + dx / 2 - 45, y + 160, date_struct.day, date_struct.mon, date_struct.year);
 }
 
+void WeatherDisplay::DrawCurrentWeather(int x, int y, int dx, int dy)
+{  
+   canvas.setTextSize(3);
+   canvas.drawCentreString("External", x + dx / 2, y + 7, 1);
+   canvas.drawLine(x, y + 35, x + dx, y + 35, M5EPD_Canvas::G15);
+
+   canvas.setTextSize(3);
+   DrawIcon(x + 30, y + 40, (uint16_t *) TEMPERATURE64x64);
+   canvas.drawString(String(int(myData.weather.currentTemperature)) + " C", x + 110, y + 65, 1);
+   
+   DrawIcon(x + 30, y + 105, (uint16_t *) HUMIDITY64x64);
+   canvas.drawString(String(int(myData.weather.currentHumidity)) + "%", x + 110, y + 130, 1);
+
+   int iconX = x + 30;
+   int iconY = y + 160;
+   String icon = myData.weather.currentIcon;
+   // DrawIcon(x + dx / 2 - 32, y + 50, (uint16_t *) image_data_03d, 64, 64, true);
+   
+        if (icon == "01d") DrawIcon(iconX, iconY, (uint16_t *) image_data_01d, 64, 64, true);
+   else if (icon == "01n") DrawIcon(iconX, iconY, (uint16_t *) image_data_03n, 64, 64, true);
+   else if (icon == "02d") DrawIcon(iconX, iconY, (uint16_t *) image_data_02d, 64, 64, true);
+   else if (icon == "02n") DrawIcon(iconX, iconY, (uint16_t *) image_data_02n, 64, 64, true);
+   else if (icon == "03d") DrawIcon(iconX, iconY, (uint16_t *) image_data_03d, 64, 64, true);
+   else if (icon == "03n") DrawIcon(iconX, iconY, (uint16_t *) image_data_03n, 64, 64, true);
+   else if (icon == "04d") DrawIcon(iconX, iconY, (uint16_t *) image_data_04d, 64, 64, true);
+   else if (icon == "04n") DrawIcon(iconX, iconY, (uint16_t *) image_data_03n, 64, 64, true);
+   else if (icon == "09d") DrawIcon(iconX, iconY, (uint16_t *) image_data_09d, 64, 64, true);
+   else if (icon == "09n") DrawIcon(iconX, iconY, (uint16_t *) image_data_09n, 64, 64, true);
+   else if (icon == "10d") DrawIcon(iconX, iconY, (uint16_t *) image_data_10d, 64, 64, true);
+   else if (icon == "10n") DrawIcon(iconX, iconY, (uint16_t *) image_data_03n, 64, 64, true);
+   else if (icon == "11d") DrawIcon(iconX, iconY, (uint16_t *) image_data_11d, 64, 64, true);
+   else if (icon == "11n") DrawIcon(iconX, iconY, (uint16_t *) image_data_11n, 64, 64, true);
+   else if (icon == "13d") DrawIcon(iconX, iconY, (uint16_t *) image_data_13d, 64, 64, true);
+   else if (icon == "13n") DrawIcon(iconX, iconY, (uint16_t *) image_data_13n, 64, 64, true);
+   else if (icon == "50d") DrawIcon(iconX, iconY, (uint16_t *) image_data_50d, 64, 64, true);
+   else if (icon == "50n") DrawIcon(iconX, iconY, (uint16_t *) image_data_50n, 64, 64, true);
+   else DrawIcon(iconX, iconY, (uint16_t *) image_data_unknown, 64, 64, true);
+
+   canvas.setTextSize(2);
+   canvas.drawString(String(myData.weather.currentMain), iconX + 80, iconY + 32, 1);
+   
+
+}
+
 /* Draw the in the wind section
  * The wind section drawing was from the github project
  * https://github.com/G6EJD/ESP32-Revised-Weather-Display-42-E-Paper
@@ -287,7 +350,7 @@ void WeatherDisplay::DrawWindInfo(int x, int y, int dx, int dy)
 void WeatherDisplay::DrawM5PaperInfo(int x, int y, int dx, int dy)
 {
    canvas.setTextSize(3);
-   canvas.drawCentreString("M5Paper", x + dx / 2, y + 7, 1);
+   canvas.drawCentreString("Internal", x + dx / 2, y + 7, 1);
    canvas.drawLine(x, y + 35, x + dx, y + 35, M5EPD_Canvas::G15);
 
    canvas.setTextSize(3);
@@ -344,7 +407,7 @@ void WeatherDisplay::DrawHourly(int x, int y, int dx, int dy, Weather &weather, 
 }
 
 /* Draw a graph with x- and y-axis and values */
-void WeatherDisplay::DrawGraph(int x, int y, int dx, int dy, String title, int xMin, int xMax, int yMin, int yMax, float values[])
+void WeatherDisplay::DrawGraph(int x, int y, int dx, int dy, String title, int xMin, int xMax, int yMin, int yMax, float values[], time_t forecastDt[])
 {
    String yMinString = String(yMin);
    String yMaxString = String(yMax);
@@ -364,7 +427,11 @@ void WeatherDisplay::DrawGraph(int x, int y, int dx, int dy, String title, int x
    canvas.drawString(yMaxString, x + 5, graphY - 5);   
    canvas.drawString(yMinString, x + 5, graphY + graphDY - 3);   
    for (int i = 0; i <= (xMax - xMin); i++) {
-      canvas.drawString(String(i), graphX + i * xStep, graphY + graphDY + 5);   
+      if (i>0){
+      canvas.drawString(getDay(forecastDt[i]), graphX - 3 + i * xStep, graphY + graphDY + 5);
+      } else {
+        canvas.drawString("now", graphX - 3 + i * xStep, graphY + graphDY + 5);
+        }   
    }
    
    canvas.drawRect(graphX, graphY, graphDX, graphDY, M5EPD_Canvas::G15);   
@@ -377,8 +444,9 @@ void WeatherDisplay::DrawGraph(int x, int y, int dx, int dy, String title, int x
 
       canvas.drawString("0", graphX - 20, yPos);   
       for (int xDash = graphX; xDash < graphX + graphDX - 10; xDash += 10) {
-         canvas.drawLine(xDash, yPos, xDash + 5, yPos, M5EPD_Canvas::G15);         
+         canvas.drawLine(xDash, yPos, xDash + 5, yPos, M5EPD_Canvas::G8);         
       }
+      
    }
    for (int i = xMin; i <= xMax; i++) {
       float yValue   = values[i - xMin];
@@ -390,6 +458,11 @@ void WeatherDisplay::DrawGraph(int x, int y, int dx, int dy, String title, int x
       if (yPos < graphY)           yPos = graphY;
 
       canvas.fillCircle(xPos, yPos, 2, M5EPD_Canvas::G15);
+
+      if (i != xMin && i != xMax){
+        canvas.drawLine(xPos, yPos, xPos, graphY + graphDY, M5EPD_Canvas::G6);
+      }
+      
       if (i > xMin) {
          canvas.drawLine(iOldX, iOldY, xPos, yPos, M5EPD_Canvas::G15);         
       }
@@ -421,7 +494,7 @@ void WeatherDisplay::Show()
    canvas.drawLine(465, 35, 465, 286, M5EPD_Canvas::G15);
    canvas.drawLine(697, 35, 697, 286, M5EPD_Canvas::G15);
    DrawSunInfo    ( 15, 35, 232, 251);
-   DrawMoonInfo   (232, 35, 232, 251);
+   DrawCurrentWeather   (232, 35, 232, 251);
    DrawWindInfo   (465, 35, 232, 251);
    DrawM5PaperInfo(697, 35, 245, 251);
 
@@ -432,11 +505,11 @@ void WeatherDisplay::Show()
    }
 
    canvas.drawRect(15, 408, maxX - 30, 122, M5EPD_Canvas::G15);
-   DrawGraph( 15, 408, 232, 122, "Temperature (C)", 0, 7, -20,   30, myData.weather.forecastMaxTemp);
-   DrawGraph( 15, 408, 232, 122, "Temperature (C)", 0, 7, -20,   30, myData.weather.forecastMinTemp);
-   DrawGraph(247, 408, 232, 122, "Rain (mm)",       0, 7,   0,   myData.weather.maxRain, myData.weather.forecastRain);
-   DrawGraph(479, 408, 232, 122, "Humidity (%)",    0, 7,   0,  100, myData.weather.forecastHumidity);
-   DrawGraph(711, 408, 232, 122, "Pressure (hPa)",  0, 7, 800, 1400, myData.weather.forecastPressure);
+   DrawGraph( 15, 408, 232, 122, "Temperature (C)", 0, 7, myData.weather.forecastMinTempFl-5,   myData.weather.forecastMaxTempFl+5, myData.weather.forecastMaxTemp, myData.weather.forecastDt);
+   DrawGraph( 15, 408, 232, 122, "Temperature (C)", 0, 7, myData.weather.forecastMinTempFl-5,   myData.weather.forecastMaxTempFl+5, myData.weather.forecastMinTemp, myData.weather.forecastDt);
+   DrawGraph(247, 408, 232, 122, "Rain (mm)",       0, 7, -5,    myData.weather.maxRain+5, myData.weather.forecastRain, myData.weather.forecastDt);
+   DrawGraph(479, 408, 232, 122, "Humidity (%)",    0, 7,   0,  100, myData.weather.forecastHumidity, myData.weather.forecastDt);
+   DrawGraph(711, 408, 232, 122, "Pressure (hPa)",  0, 7, 800, 1400, myData.weather.forecastPressure, myData.weather.forecastDt);
    
    canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
    delay(1000);
@@ -459,3 +532,26 @@ void WeatherDisplay::ShowM5PaperInfo()
    canvas.pushCanvas(697, 35, UPDATE_MODE_GC16);
    delay(1000);
 }
+
+void WeatherDisplay::ShowWiFiError()
+{
+  Serial.println("WeatherDisplay::ShowWiFiError");
+  canvas.createCanvas(960, 540);
+  canvas.setTextSize(5);
+   canvas.setTextColor(WHITE, BLACK);
+   canvas.setTextDatum(TL_DATUM);
+   canvas.drawCentreString("WI-FI Error", 960/2, 540/2, 1);
+   canvas.drawCentreString(getRTCTimeString(), 960/2, (540/2) + 50, 1);
+  }
+
+void WeatherDisplay::ShowWiFiConnecting()
+{
+  Serial.println("WeatherDisplay::ShowWiFiConnecting");
+  canvas.createCanvas(960, 540);
+  canvas.setTextSize(5);
+   canvas.setTextColor(WHITE, BLACK);
+   canvas.setTextDatum(TL_DATUM);
+   canvas.drawCentreString("Connecting to Wi-Fi...", 960/2, 540/2, 1);
+   canvas.drawCentreString(String(WIFI_SSID), 960/2, 540/2 + 60, 1);
+
+  }

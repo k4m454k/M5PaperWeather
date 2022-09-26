@@ -41,6 +41,12 @@ void InitEPD(bool clearDisplay = true)
  *  NOTE: the M5Paper could not shutdown while on usb connection.
  *        In this case use the esp_deep_sleep_start() function.
 */
+
+void ClearDisplay()
+{
+  M5.EPD.Clear(true);
+  }
+
 void ShutdownEPD(int sec)
 {
    Serial.println("Shutdown");

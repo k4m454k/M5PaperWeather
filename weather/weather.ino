@@ -22,7 +22,7 @@
   
 #include <M5EPD.h>
 #include "Config.h"
-#include "ConfigOverride.h" // Remove this line
+// #include "ConfigOverride.h" // Remove this line
 #include "Data.h"
 #include "Display.h"
 #include "Battery.h"
@@ -45,7 +45,11 @@ void setup()
 {
 #ifndef REFRESH_PARTLY
    InitEPD(true);
+   myDisplay.ShowWiFiConnecting();
+   GetBatteryValues(myData);
+   myDisplay.DrawHeadPublic();
    if (StartWiFi(myData.wifiRSSI)) {
+      ClearDisplay();
       GetBatteryValues(myData);
       GetSHT30Values(myData);
       GetMoonValues(myData);
@@ -55,7 +59,12 @@ void setup()
       myData.Dump();
       myDisplay.Show();
       StopWiFi();
-   }
+   } else {
+    ClearDisplay();
+    
+    myDisplay.ShowWiFiError();
+    myDisplay.DrawHeadPublic();
+    }
    ShutdownEPD(60 * 60); // every 1 hour
 #else 
    myData.LoadNVS();
@@ -76,13 +85,13 @@ void setup()
       InitEPD(false);
       GetSHT30Values(myData);
       myDisplay.ShowM5PaperInfo();
-      if (myData.nvsCounter >= 60) {
+      if (myData.nvsCounter >= 10) {
          myData.nvsCounter = 0;
       }
    }
    myData.nvsCounter++;
    myData.SaveNVS();
-   ShutdownEPD(600); // 10 minute
+   ShutdownEPD(60); // 10 minute
 #endif // REFRESH_PARTLY   
 }
 
